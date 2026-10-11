@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 from .intake import IntakeStore, authentic_tenant, MAX_BYTES
@@ -15,6 +16,8 @@ def create_app(*, store: IntakeStore, tenant_tokens: dict[str,str]) -> FastAPI:
     app = FastAPI(title="Tax Genie Private Pilot", version="0.3.0", docs_url=None, redoc_url=None)
     if not tenant_tokens or any(not k or len(v)<32 for k,v in tenant_tokens.items()):
         raise ValueError("Configure tenant IDs and random API tokens >= 32 characters")
+    if any(not re.fullmatch(r"[A-Za-z0-9_-]{32,256}", v) or len(set(v)) < 8 for v in tenant_tokens.values()):
+        raise ValueError("Tenant token must be a strong random URL-safe secret")
     if len(set(tenant_tokens.values())) != len(tenant_tokens):
         raise ValueError("Tenant tokens must be unique")
 
