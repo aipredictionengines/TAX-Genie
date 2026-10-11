@@ -9,14 +9,14 @@ class TestSynthetic50(unittest.TestCase):
         self.assertEqual({row["dataset"] for row in rows},{"synthetic"})
     def test_deterministic(self):
         self.assertEqual(make_cohort(),make_cohort())
-    def test_benchmark_reports_expected_misses(self):
+    def test_fixed_cohort_after_parser_improvement(self):
         result=run()
         self.assertEqual(result["total"],50)
         self.assertEqual(result["datasets"]["synthetic"]["count"],50)
-        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["fn"],10)
+        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["fn"],0)
         self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["fp"],0)
-        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["tp"],20)
+        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["tp"],30)
         self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["precision"],1.0)
-        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["recall"],0.6667)
+        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["recall"],1.0)
 
 if __name__=="__main__": unittest.main()
