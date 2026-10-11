@@ -2,7 +2,6 @@
 from __future__ import annotations
 import hashlib
 import hmac
-import io
 import json
 import os
 import secrets
@@ -12,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from pypdf import PdfReader
+from .pdf_isolation import parse_pdf_bounded
 from .document_adapter import DocumentIntelligence
 
 MAX_BYTES = 5 * 1024 * 1024
@@ -78,18 +77,17 @@ class IntakeStore:
     def add_pdf(self, tenant: str, case_id: str, content: bytes) -> dict | None:
         if not content or len(content)>MAX_BYTES: raise ValueError("PDF must be between 1 byte and 5 MiB")
         if not content.startswith(b"%PDF-"): raise ValueError("Only PDF files are permitted")
+        # Run PDF parser in a bounded subprocess; still NOT an OS sandbox.
         try:
-            pdf=PdfReader(io.BytesIO(content),strict=True)
-            if pdf.is_encrypted or len(pdf.pages)>MAX_PDF_PAGES or not pdf.pages:
-                raise ValueError("Encrypted, empty or oversized PDF not supported")
-            # Pilot extraction uses only selectable PDF text, never OCR.
-            text = "\n".join(page.extract_text() or "" for page in pdf.pages)
-        except Exception as exc:
+            parsed = parse_pdf_bounded(content)
+        except ValueError as exc:
             raise ValueError("Unreadable or unsafe PDF") from exc
+        text = parsed["text"]
+        pages = parsed["pages"]
         # Do not echo invoice text or taxpayer identifiers into API responses or logs.
-        extraction={"method":"pypdf_text","pages":len(pdf.pages),"text_present":bool(text.strip()),
+        extraction={"method":"bounded_subprocess_pypdf","pages":pages,"text_present":bool(text.strip()),
                     "requires_human_review":True,
-                    "evidence":DocumentIntelligence().assess(text, content, len(pdf.pages))}
+                    "evidence":DocumentIntelligence().assess(text, content, pages)}
         doc_id=str(uuid.uuid4())
         nonce=os.urandom(12)
         encrypted=self.cipher.encrypt(nonce,content,(tenant+":"+case_id+":"+doc_id).encode())
