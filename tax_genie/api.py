@@ -7,12 +7,13 @@ import re
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 from .intake import IntakeStore, authentic_tenant, MAX_BYTES
+from .security_controls import Scanner, RateLimiter, verified_scan
 
 class DocumentInput(BaseModel):
     filename: str = Field(max_length=120)
     content_base64: str = Field(max_length=8_000_000)
 
-def create_app(*, store: IntakeStore, tenant_tokens: dict[str,str]) -> FastAPI:
+def create_app(*, store: IntakeStore, tenant_tokens: dict[str,str], scanner=None, limiter=None) -> FastAPI:
     app = FastAPI(title="Tax Genie Private Pilot", version="0.3.0", docs_url=None, redoc_url=None)
     if not tenant_tokens or any(not k or len(v)<32 for k,v in tenant_tokens.items()):
         raise ValueError("Configure tenant IDs and random API tokens >= 32 characters")
@@ -21,10 +22,15 @@ def create_app(*, store: IntakeStore, tenant_tokens: dict[str,str]) -> FastAPI:
     if len(set(tenant_tokens.values())) != len(tenant_tokens):
         raise ValueError("Tenant tokens must be unique")
 
+    scanner = scanner if scanner is not None else Scanner()
+    limiter = limiter if limiter is not None else RateLimiter()
+
     def auth(authorization: str | None = Header(default=None)) -> str:
         tenant=authentic_tenant(authorization,tenant_tokens)
         if tenant is None:
             raise HTTPException(status_code=401,detail="Unauthorized")
+        if not limiter.allow(tenant):
+            raise HTTPException(status_code=429,detail="Rate limit exceeded")
         return tenant
 
     @app.post("/v1/cases",status_code=201)
@@ -47,6 +53,10 @@ def create_app(*, store: IntakeStore, tenant_tokens: dict[str,str]) -> FastAPI:
             data=base64.b64decode(payload.content_base64,validate=True)
         except (ValueError,base64.binascii.Error):
             raise HTTPException(400,detail="Invalid file encoding")
+        if len(data)>MAX_BYTES:
+            raise HTTPException(413,detail="File too large")
+        if not verified_scan(scanner,data):
+            raise HTTPException(503,detail="Document scanning unavailable or file rejected")
         try:
             document=store.add_pdf(tenant,case_id,data)
         except ValueError:
