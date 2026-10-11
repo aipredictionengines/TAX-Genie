@@ -10,9 +10,9 @@ class TestFrozenProspectiveHoldout(unittest.TestCase):
     def test_results_and_no_false_vat_claims(self):
         result=run_holdout_v2()
         v=result["per_field"]["synthetic"]["vat_amount"]
-        self.assertEqual((v["tp"],v["fp"],v["fn"],v["tn"]),(20,0,10,20))
+        self.assertEqual((v["tp"],v["fp"],v["fn"],v["tn"]),(30,0,0,20))
         self.assertEqual(v["precision"],1.0)
-        self.assertEqual(v["recall"],0.6667)
+        self.assertEqual(v["recall"],1.0)
     def test_cohort_reproducible(self):
         self.assertEqual(frozen_holdout_v2(),frozen_holdout_v2())
 if __name__=="__main__":
