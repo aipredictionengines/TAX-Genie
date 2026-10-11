@@ -9,11 +9,14 @@ from tax_genie.intake import IntakeStore
 
 KEY="0123456789abcdef0123456789abcdefA"
 
+class CleanSyntheticScanner:
+    def scan(self, data): return True
+
 class TestBoundedIntake(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory()
         self.store=IntakeStore(self.temp.name+"/db.sqlite",os.urandom(32))
-        self.client=TestClient(create_app(store=self.store,tenant_tokens={"pilot":KEY}))
+        self.client=TestClient(create_app(store=self.store,tenant_tokens={"pilot":KEY},scanner=CleanSyntheticScanner()))
         self.headers={"Authorization":"Bearer "+KEY}
     def tearDown(self):
         self.temp.cleanup()
