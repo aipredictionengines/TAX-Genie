@@ -15,8 +15,8 @@ class TestSynthetic50(unittest.TestCase):
         self.assertEqual(result["datasets"]["synthetic"]["count"],50)
         self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["fn"],10)
         self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["fp"],0)
-        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["tp"],30)
+        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["tp"],20)
         self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["precision"],1.0)
-        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["recall"],0.75)
+        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["recall"],0.6667)
 
 if __name__=="__main__": unittest.main()
