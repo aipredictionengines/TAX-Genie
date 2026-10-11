@@ -13,6 +13,7 @@ from pathlib import Path
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from .pdf_isolation import parse_pdf_bounded
 from .document_adapter import DocumentIntelligence
+from .audit_journal import AuditJournal
 
 MAX_BYTES = 5 * 1024 * 1024
 MAX_PDF_PAGES = 20
@@ -37,6 +38,7 @@ class IntakeStore:
             raise ValueError("AES-GCM key must be 16/24/32 bytes")
         self.database = database
         self.cipher = AESGCM(key)
+        self.audit = AuditJournal(key)
         Path(database).parent.mkdir(parents=True, exist_ok=True)
         with self._db() as con:
             con.execute("""CREATE TABLE IF NOT EXISTS cases
@@ -47,6 +49,7 @@ class IntakeStore:
                  created TEXT NOT NULL, sha256 TEXT NOT NULL, ciphertext BLOB NOT NULL,
                  nonce BLOB NOT NULL, extracted TEXT NOT NULL,
                  FOREIGN KEY(case_id) REFERENCES cases(id))""")
+            self.audit.setup(con)
             con.execute("CREATE INDEX IF NOT EXISTS cases_tenant ON cases(tenant)")
             con.execute("CREATE INDEX IF NOT EXISTS docs_tenant_case ON documents(tenant,case_id)")
 
@@ -61,6 +64,7 @@ class IntakeStore:
         with self._db() as con:
             con.execute("INSERT INTO cases VALUES (?,?,?,?,?)",
                         (case_id,tenant,created,"HUMAN_REVIEW_REQUIRED","[]"))
+            self.audit.append(con,tenant,"CASE_CREATED",case_id)
         return {"id":case_id,"created":created,"status":"HUMAN_REVIEW_REQUIRED"}
 
     def case(self, tenant: str, case_id: str) -> dict | None:
@@ -98,6 +102,7 @@ class IntakeStore:
                 return None
             con.execute("INSERT INTO documents VALUES (?,?,?,?,?,?,?,?)",
                         (doc_id,case_id,tenant,created,digest,encrypted,nonce,json.dumps(extraction)))
+            self.audit.append(con,tenant,"DOCUMENT_ACCEPTED",doc_id)
         return {"id":doc_id,"sha256":digest, "extraction":extraction}
 
     def delete_case(self, tenant: str, case_id: str) -> bool:
@@ -106,4 +111,5 @@ class IntakeStore:
                 return False
             con.execute("DELETE FROM documents WHERE tenant=? AND case_id=?",(tenant,case_id))
             con.execute("DELETE FROM cases WHERE tenant=? AND id=?",(tenant,case_id))
+            self.audit.append(con,tenant,"CASE_DELETED",case_id)
         return True
