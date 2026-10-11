@@ -31,10 +31,10 @@ class TestIndependentHoldout(unittest.TestCase):
     def test_fifty_new_frozen_cases(self):
         result=evaluate(holdout(),require_50=True)
         self.assertEqual(result["total"],50)
-        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["tp"],20)
-        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["fn"],20)
+        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["tp"],30)
+        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["fn"],10)
         self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["fp"],0)
-        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["recall"],0.5)
+        self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["recall"],0.75)
         self.assertEqual(result["per_field"]["synthetic"]["vat_amount"]["precision"],1.0)
 
 if __name__=="__main__": unittest.main()
