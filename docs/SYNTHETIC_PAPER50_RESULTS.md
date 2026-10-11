@@ -11,6 +11,6 @@ This is a **synthetic parser regression evaluation**, not validation of real inv
 
 Run: `python -m unittest discover -s tests -v`, then `python -m scripts.run_synthetic_paper50`.
 
-The benchmark's VAT expected TP=30, FN=10, FP=0, TN=10, precision=1.0 and recall=0.75 (threshold 0.90 **NOT met**). This is intentionally a failing quality metric; do not misrepresent CI success as meeting the product quality gate.
+The benchmark's VAT expected TP=20, FN=10, FP=0, TN=20, precision=1.0 and recall=0.6667 (threshold 0.90 **NOT met**). This is intentionally a failing quality metric; do not misrepresent CI success as meeting the product quality gate.
 
 The fixture is generated at runtime and has no private data. Real PAPER 50 is **NOT RUN** and must be a distinct, consented, independently labeled cohort outside this public repo.
