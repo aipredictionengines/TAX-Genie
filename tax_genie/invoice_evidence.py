@@ -13,7 +13,7 @@ PATTERNS = {
     "invoice_date": re.compile(r"^\s*(?:Invoice\s*Date|Date\s*de\s*facture)\s*:\s*(\d{4}-\d{2}-\d{2})\s*$", re.I),
     "vat_id": re.compile(r"^\s*(?:Supplier\s*VAT\s*(?:ID|No\.?|Number)|VAT\s*(?:ID|Number)|TVA\s*intracommunautaire)\s*:\s*([A-Z]{2}[A-Z0-9]{6,13})\s*$", re.I),
     "currency": re.compile(r"^\s*(?:Currency|Devise)\s*:\s*([A-Z]{3})\s*$", re.I),
-    "vat_amount": re.compile(r"^\s*(?:(?:Tax\s+)?VAT\s*(?:Amount|Total)|TVA\s*(?:montant|totale)|Taxe\s+sur\s+valeur\s+ajoutée)\s*:?\s*([0-9]{1,10}(?:\.[0-9]{1,2})?)\s*$", re.I),
+    "vat_amount": re.compile(r"^\s*(?:(?:Tax\s+)?VAT\s*(?:Amount|Total)|TVA\s*(?:montant|totale)|Taxe\s+sur\s+valeur\s+ajoutée|Montant\s+de\s+TVA)\s*:?\s*([0-9]{1,10}(?:\.[0-9]{1,2})?)\s*$", re.I),
     "total_amount": re.compile(r"^\s*(?:Grand\s*Total|Invoice\s*Total|Total\s*TTC)\s*:\s*([0-9]{1,10}(?:\.[0-9]{1,2})?)\s*$", re.I),
     "country": re.compile(r"^\s*(?:Supplier\s*Country|Pays\s*du\s*fournisseur)\s*:\s*(DE|FR|NL|BE|IT|ES|AT)\s*$", re.I),
 }

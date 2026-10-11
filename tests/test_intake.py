@@ -19,9 +19,9 @@ class TestSecureIntake(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory()
         self.store=IntakeStore(self.tmp.name+"/pilot.db",os.urandom(32))
-        self.client=TestClient(create_app(store=self.store,tenant_tokens={"a":"A"*48,"b":"B"*48}))
-        self.a={"Authorization":"Bearer "+"A"*48}
-        self.b={"Authorization":"Bearer "+"B"*48}
+        self.client=TestClient(create_app(store=self.store,tenant_tokens={"a":"0123456789abcdef0123456789abcdefA","b":"fedcba9876543210fedcba9876543210B"}))
+        self.a={"Authorization":"Bearer "+"0123456789abcdef0123456789abcdefA"}
+        self.b={"Authorization":"Bearer "+"fedcba9876543210fedcba9876543210B"}
     def tearDown(self):
         self.tmp.cleanup()
     def new(self,headers):
