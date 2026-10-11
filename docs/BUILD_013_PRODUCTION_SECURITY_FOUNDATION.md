@@ -1,8 +1,8 @@
 # BUILD-013 — security foundation, not production-ready
 
 ## Added
-- Pilot in-memory rate limiting primitive and tests. This is **not** distributed rate limiting or identity-grade throttling.
-- Malware scanning protocol defaults to reject/unavailable. No real scanner integrated; do not enable customer uploads.
+- Pilot in-memory per-tenant rate limiting wired into API authentication and tests. This is **not** distributed rate limiting or identity-grade throttling.
+- Malware scanning is enforced at the API upload boundary and defaults to reject/unavailable (HTTP 503). No real scanner integrated; client uploads remain disabled. Synthetic tests inject a fake scanner explicitly.
 - HMAC event digest utility, useful for future integrity checks. It is **not** a durable audit log.
 - Existing AES-GCM encrypted PDF storage, tenant-scoped pilot records and bounded subprocess parsing remain.
 
