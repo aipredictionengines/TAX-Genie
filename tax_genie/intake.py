@@ -87,7 +87,7 @@ class IntakeStore:
         # Do not echo invoice text or taxpayer identifiers into API responses or logs.
         extraction={"method":"bounded_subprocess_pypdf","pages":pages,"text_present":bool(text.strip()),
                     "requires_human_review":True,
-                    "evidence":DocumentIntelligence().assess(text, content, len(pdf.pages))}
+                    "evidence":DocumentIntelligence().assess(text, content, pages)}
         doc_id=str(uuid.uuid4())
         nonce=os.urandom(12)
         encrypted=self.cipher.encrypt(nonce,content,(tenant+":"+case_id+":"+doc_id).encode())
