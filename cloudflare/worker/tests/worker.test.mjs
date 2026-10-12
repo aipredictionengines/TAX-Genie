@@ -6,7 +6,7 @@ test("health endpoint has explicit bootstrap status", async () => {
   const response = await worker.fetch(new Request("https://example.test/health"));
   assert.equal(response.status, 200);
   const json = await response.json();
-  assert.deepEqual(json, {service:"tax-genie-api",status:"bootstrap",production_ready:false});
+  assert.deepEqual(json, {service:"tax-genie-worker",status:"bootstrap",production_ready:false});
   assert.equal(response.headers.get("cache-control"), "no-store");
 });
 
