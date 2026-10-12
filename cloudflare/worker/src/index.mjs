@@ -3,7 +3,7 @@ export default {
   async fetch(request) {
     const url = new URL(request.url);
     if (url.pathname === "/health" && request.method === "GET") {
-      return new Response(JSON.stringify({service:"tax-genie-api", status:"bootstrap", production_ready:false}), {
+      return new Response(JSON.stringify({service:"tax-genie-worker", status:"bootstrap", production_ready:false}), {
         status: 200,
         headers: {"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"}
       });
