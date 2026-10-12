@@ -27,7 +27,7 @@ The build command uses `wrangler deploy --dry-run`; it does not publish resource
 - Build command: `npm run build`
 - Deploy command: `npm run deploy`
 - Do not reconnect automatic production deploy until BUILD-018 has passed review and environment isolation checks.
-- The existing `tax-genie-worker` Worker was reported deleted. Do not recreate it automatically.
+- The previous `tax-genie-api` Worker was reported deleted. The replacement is named `tax-genie-worker`; do not recreate it automatically.
 - `workers_dev:false` requires an explicit future route/custom-domain deployment strategy. Never enable public test endpoints by default.
 
 ## Future resource verification gate
