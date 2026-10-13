@@ -32,3 +32,26 @@ jobs:
         run: npm test
       - name: Cloudflare Worker bundling dry run (no deploy)
         run: npm run build
+
+  generate-lockfile:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/build/018-cloudflare-foundation'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: build/018-cloudflare-foundation
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Generate npm lockfile from registry
+        working-directory: cloudflare/worker
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit generated lockfile into isolated build branch
+        run: |
+          test -s cloudflare/worker/package-lock.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add cloudflare/worker/package-lock.json
+          git diff --cached --quiet || (git commit -m 'BUILD-018: lock npm dependencies' && git push origin HEAD:build/018-cloudflare-foundation)
