@@ -43,13 +43,13 @@ class TestPdfApiIngress(unittest.TestCase):
 
     def test_bad_header_does_not_call_scanner_or_parser(self):
         response = self.upload("invoice.pdf", b"not-a-pdf")
-        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.status_code, 422)
         self.assertEqual(self.scanner.calls, 0)
         self.assertEqual(self.store.parse_calls, 0)
 
     def test_traversal_filename_does_not_call_scanner_or_parser(self):
         response = self.upload("../invoice.pdf", b"%PDF-1.7\nsynthetic")
-        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.status_code, 422)
         self.assertEqual(self.scanner.calls, 0)
         self.assertEqual(self.store.parse_calls, 0)
 
