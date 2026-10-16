@@ -14,3 +14,9 @@ This phase adds a deterministic, testable **preflight policy** for synthetic PDF
 A correct PDF header is not proof a file is valid, benign, or parseable. The private-pilot FastAPI upload route now invokes preflight and verified scanning before calling the existing `IntakeStore.add_pdf` path. No public Cloudflare Worker route has been enabled. The pilot scanner remains intentionally unconfigured by default, so uploads continue to fail closed. This integration is not a production-safe upload service. Scanner implementations, cloud queue, hardened isolation, decompression and parser resource budgets require separate implementation and review.
 
 **No real customer invoices, live uploads, Cloudflare deployment, D1/R2 provisioning or merge approved by this phase.**
+
+## Subprocess lifecycle review
+- Replaced the multiprocessing queue with a one-way pipe: the parent receives the bounded extraction result before joining the process, avoiding queue feeder deadlock when text is large.
+- Worker closes its pipe and the parent always closes both ends and reaps/terminates the process.
+- The PDF reader still runs in a normal child process with inherited host access; there is **no** hardened OS sandbox, memory/CPU cgroup limit, network disablement, antivirus implementation, or validated isolation boundary.
+- The bounded parser tests use generated synthetic PDFs only; full adversarial fuzzing and independent review are outstanding.
