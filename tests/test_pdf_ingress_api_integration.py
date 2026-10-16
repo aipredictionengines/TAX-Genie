@@ -31,7 +31,7 @@ class TestPdfApiIngress(unittest.TestCase):
     def setUp(self):
         self.store = FakeStore()
         self.scanner = FakeScanner(False)
-        self.token = "A" * 40
+        self.token = "0123456789abcdef0123456789abcdefA"
         self.client = TestClient(create_app(
             store=self.store, tenant_tokens={"tenant-a":self.token}, scanner=self.scanner
         ))
