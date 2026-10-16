@@ -11,6 +11,6 @@ This phase adds a deterministic, testable **preflight policy** for synthetic PDF
 
 ## Security limitations
 
-A correct PDF header is not proof a file is valid, benign, or parseable. These helpers are not wired into production upload routes. No new client-facing functionality is unlocked. Scanner implementations, cloud queue, hardened isolation, decompression and parser resource budgets require separate implementation and review.
+A correct PDF header is not proof a file is valid, benign, or parseable. The private-pilot FastAPI upload route now invokes preflight and verified scanning before calling the existing `IntakeStore.add_pdf` path. No public Cloudflare Worker route has been enabled. The pilot scanner remains intentionally unconfigured by default, so uploads continue to fail closed. This integration is not a production-safe upload service. Scanner implementations, cloud queue, hardened isolation, decompression and parser resource budgets require separate implementation and review.
 
 **No real customer invoices, live uploads, Cloudflare deployment, D1/R2 provisioning or merge approved by this phase.**
