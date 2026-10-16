@@ -56,7 +56,8 @@ def create_app(*, store: IntakeStore, tenant_tokens: dict[str,str], scanner=None
             raise HTTPException(400,detail="Invalid file encoding")
         if len(data)>MAX_BYTES:
             raise HTTPException(413,detail="File too large")
-        # Fail closed before the bounded PDF subprocess is invoked.\n        if not preflight_then_scan(payload.filename,data,scanner):
+        # Fail closed before the bounded PDF subprocess is invoked.
+        if not preflight_then_scan(payload.filename,data,scanner):
             raise HTTPException(503,detail="Document scanning unavailable or file rejected")
         try:
             document=store.add_pdf(tenant,case_id,data)
