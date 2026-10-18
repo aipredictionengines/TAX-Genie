@@ -61,5 +61,25 @@ class TestExtractionQuality(unittest.TestCase):
         self.assertEqual(result["metrics"].get("policy_violations"), 14)
 
 
+    def test_detects_missing_conflict_review_flag(self):
+        def suppress_flag(text):
+            result = extract_invoice_evidence(text)
+            result["review_flags"] = []
+            return result
+        report = evaluate_quality(make_quality_cohort(), extractor=suppress_flag)
+        self.assertFalse(report["passed"])
+        self.assertGreater(report["metrics"].get("missing_required_flags", 0), 0)
+
+    def test_detects_wrong_supported_value(self):
+        def incorrect_amount(text):
+            result = extract_invoice_evidence(text)
+            if "vat_amount" in result["fields"]:
+                result["fields"]["vat_amount"]["value"] = "999.99"
+            return result
+        report = evaluate_quality(make_quality_cohort(), extractor=incorrect_amount)
+        self.assertFalse(report["passed"])
+        self.assertGreater(report["metrics"].get("missed_or_wrong_supported", 0), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
