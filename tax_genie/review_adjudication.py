@@ -30,7 +30,7 @@ def _validate_submission(submission: dict, packet: dict) -> dict:
     }, "Invalid review submission fields")
     _require(submission["schema"] == REVIEW_SCHEMA, "Invalid review schema")
     _require(submission["packet_sha256"] == packet["packet_sha256"], "Review packet digest mismatch")
-    _require(submission["reviewer_role"] in ALLOWED_ROLES, "Invalid reviewer role")
+    _require(isinstance(submission["reviewer_role"], str) and submission["reviewer_role"] in ALLOWED_ROLES, "Invalid reviewer role")
     _require(type(submission["independence_declared"]) is bool, "Invalid independence declaration")
     _require(isinstance(submission["review_date"], str), "Invalid review date")
     try:
@@ -57,7 +57,7 @@ def _validate_submission(submission: dict, packet: dict) -> dict:
                      "Invalid review field status")
             if annotation["status"] == "VALUE":
                 _require(set(annotation) == {"status", "value", "line"}
-                         and isinstance(annotation["value"], str) and bool(annotation["value"])
+                         and isinstance(annotation["value"], str) and 0 < len(annotation["value"]) <= 240
                          and type(annotation["line"]) is int and annotation["line"] > 0,
                          "Malformed source-backed value")
             else:
@@ -91,6 +91,8 @@ def compare_review_submission(submission: dict) -> dict:
             if judgment["status"] == "VALUE":
                 if judgment["line"] > len(lines):
                     issues.append({"case_id": cid, "field": field, "issue": "line_out_of_range"})
+                elif judgment["value"].casefold() not in lines[judgment["line"] - 1].casefold():
+                    issues.append({"case_id": cid, "field": field, "issue": "source_line_does_not_contain_value"})
                 if expected is None:
                     issues.append({"case_id": cid, "field": field, "issue": "review_asserted_unsupported"})
                 elif judgment["value"] != expected:
