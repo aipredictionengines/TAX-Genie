@@ -5,7 +5,7 @@ The evaluator does not transmit, persist, or include raw invoice lines in report
 """
 from __future__ import annotations
 from collections import defaultdict
-from .invoice_evidence import FIELDS, extract_invoice_evidence
+from .invoice_evidence import FIELDS, PATTERNS, extract_invoice_evidence
 
 
 def evaluate_quality(rows: list[dict], *, extractor=extract_invoice_evidence) -> dict:
@@ -41,12 +41,25 @@ def evaluate_quality(rows: list[dict], *, extractor=extract_invoice_evidence) ->
             failures.append({"id": row["id"], "issue": "invalid_extractor_result"})
             continue
         predicted = {}
+        source_lines = row["text"].splitlines()
         for field, candidate in result["fields"].items():
             if field not in fields or not isinstance(candidate, dict) or not isinstance(candidate.get("value"), str):
                 failures.append({"id": row["id"], "issue": "invalid_candidate"})
                 continue
-            if not isinstance(candidate.get("line"), int) or candidate["line"] <= 0 or candidate.get("method") != "labeled_regex":
-                failures.append({"id": row["id"], "issue": "invalid_provenance"})
+            line_number = candidate.get("line")
+            valid_origin = (
+                type(line_number) is int
+                and 1 <= line_number <= len(source_lines)
+                and candidate.get("method") == "labeled_regex"
+            )
+            if valid_origin:
+                match = PATTERNS[field].fullmatch(source_lines[line_number - 1])
+                origin_value = None if match is None else match.group(1)
+                if origin_value is not None and field in {"currency", "vat_id", "country"}:
+                    origin_value = origin_value.upper()
+                valid_origin = origin_value == candidate["value"]
+            if not valid_origin:
+                failures.append({"id": row["id"], "issue": "invalid_provenance", "field": field})
             predicted[field] = candidate["value"]
         families[row["family"]] += 1
         totals["cases"] += 1
@@ -57,6 +70,10 @@ def evaluate_quality(rows: list[dict], *, extractor=extract_invoice_evidence) ->
             if expected is None:
                 if actual is None:
                     totals["correct_abstentions"] += 1
+                    if truth is None:
+                        totals["correct_negative_abstentions"] += 1
+                    else:
+                        totals["safe_abstentions_on_known_truth"] += 1
                 else:
                     totals["unsafe_assertions"] += 1
                     failures.append({"id": row["id"], "issue": "unsafe_assertion", "field": field})
@@ -71,10 +88,8 @@ def evaluate_quality(rows: list[dict], *, extractor=extract_invoice_evidence) ->
                 totals["semantic_known_fields"] += 1
                 if actual == truth:
                     totals["semantic_exact_fields"] += 1
-                elif expected is None:
-                    totals["safe_abstentions_on_known_truth"] += 1
         flags = result.get("review_flags")
-        if not isinstance(flags, list) or not set(required_flags).issubset(set(flags)):
+        if not isinstance(flags, list) or any(not isinstance(flag, str) for flag in flags) or not set(required_flags).issubset(set(flags)):
             totals["missing_required_flags"] += 1
             failures.append({"id": row["id"], "issue": "missing_required_review_flag"})
         if (
