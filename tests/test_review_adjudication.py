@@ -115,6 +115,22 @@ class TestReviewAdjudication(unittest.TestCase):
         with self.assertRaises(ValueError):
             compare_review_submission(review)
 
+    def test_in_range_but_wrong_evidence_line_reported(self):
+        review = simulated_submission()
+        review["cases"][0]["fields"]["vat_amount"]["line"] = 1
+        result = compare_review_submission(review)
+        self.assertTrue(any(
+            x["issue"] == "source_line_does_not_contain_value"
+            for x in result["disagreements"]
+        ))
+
+    def test_unhashable_reviewer_role_rejected_cleanly(self):
+        review = simulated_submission()
+        review["reviewer_role"] = ["unsupported"]
+        with self.assertRaises(ValueError):
+            compare_review_submission(review)
+
+
 
 if __name__ == "__main__":
     unittest.main()
