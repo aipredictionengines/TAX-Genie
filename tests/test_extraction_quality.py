@@ -23,6 +23,11 @@ class TestExtractionQuality(unittest.TestCase):
         self.assertEqual(result["metrics"].get("missing_required_flags", 0), 0)
         self.assertEqual(result["metrics"].get("policy_violations", 0), 0)
         self.assertEqual(result["metrics"].get("safe_abstentions_on_known_truth"), 4)
+        self.assertEqual(result["metrics"].get("correct_negative_abstentions"), 4)
+        self.assertEqual(result["metrics"].get("correct_abstentions"), 8)
+        self.assertEqual(result["metrics"].get("semantic_known_fields"), 94)
+        self.assertEqual(result["metrics"].get("semantic_exact_fields"), 90)
+        self.assertEqual(result["semantic_exact_coverage"], round(90 / 94, 4))
         self.assertEqual(result["supported_exact_rate"], 1.0)
         self.assertLess(result["semantic_exact_coverage"], 1.0)
         self.assertNotIn("FR12345678901", str(result))
@@ -79,6 +84,43 @@ class TestExtractionQuality(unittest.TestCase):
         report = evaluate_quality(make_quality_cohort(), extractor=incorrect_amount)
         self.assertFalse(report["passed"])
         self.assertGreater(report["metrics"].get("missed_or_wrong_supported", 0), 0)
+
+    def test_forged_provenance_line_is_rejected_even_if_value_matches(self):
+        def forged(text):
+            result = extract_invoice_evidence(text)
+            candidate = result["fields"].get("vat_amount")
+            if candidate is not None:
+                candidate["line"] = 1  # This points at the invoice-number line.
+            return result
+        report = evaluate_quality(make_quality_cohort(), extractor=forged)
+        self.assertFalse(report["passed"])
+        self.assertTrue(any(f["issue"] == "invalid_provenance" for f in report["failures"]))
+
+    def test_boolean_line_number_is_not_valid_provenance(self):
+        def forged(text):
+            result = extract_invoice_evidence(text)
+            candidate = result["fields"].get("vat_amount")
+            if candidate is not None:
+                candidate["line"] = True
+            return result
+        report = evaluate_quality(make_quality_cohort(), extractor=forged)
+        self.assertFalse(report["passed"])
+        self.assertTrue(any(f["issue"] == "invalid_provenance" for f in report["failures"]))
+
+    def test_invalid_review_flag_type_fails_closed(self):
+        def invalid_flags(text):
+            result = extract_invoice_evidence(text)
+            result["review_flags"] = [[]]
+            return result
+        report = evaluate_quality(make_quality_cohort(), extractor=invalid_flags)
+        self.assertFalse(report["passed"])
+        self.assertEqual(report["metrics"]["missing_required_flags"], 14)
+
+    def test_independent_truth_must_not_contradict_supported_assertions(self):
+        rows = make_quality_cohort()
+        rows[0]["supported_expected"]["vat_amount"] = "999.99"
+        with self.assertRaises(ValueError):
+            evaluate_quality(rows)
 
 
 if __name__ == "__main__":
